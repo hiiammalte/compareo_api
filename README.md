@@ -5,11 +5,12 @@ This is the backend part of the compareo app.
 ## Features
 
 - Node.js and Express based Web API application
-- GraphQL-Endpoint using Apollo Server
+- GraphQL-endpoint using Apollo Server
 - JWT-based Authentication
 - Refresh Token as HttpOnly Cookie
 - Access-logging and Error-intercepting Apollo-Middleware
-- TypeScript Decorators
+- TypeGraphQL implementation
+- TypeScript decorators
 
 ## Technologies
 
@@ -19,6 +20,7 @@ This project utilizes the following Technologies / Node Packages:
 - Express framework
 - Apollo Server
 - MongoDB
+- TypeGraphQL
 - typegoose
 - mongoose
 - argon2
