@@ -25,3 +25,4 @@ This project utilizes the following Technologies / Node Packages:
 - mongoose
 - argon2
 - dotenv-safe
+- mongo-seeding
