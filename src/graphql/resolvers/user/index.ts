@@ -1,12 +1,16 @@
 import { Arg, Ctx, Mutation, Resolver, Query, Authorized,  } from "type-graphql";
-import argon2 from "argon2";
 import { ObjectId } from "mongodb";
+import argon2 from "argon2";
+
 import { UserModel, User } from "../../../entities/User";
 import { UserCreatedResponse, UserSuccessResponse, UserTokenResponse } from "./responses";
 import { RegistrationInput, UsernamePasswordInput } from "./inputs";
+
 import AppContext from "../../authorization/appContext";
-import { setTokens } from "../../../authentication/setTokens";
-import { validateRefreshToken } from "../../../authentication/validateTokens";
+import { setAccessToken, setRefreshToken } from "../../../authentication/setTokens";
+
+const LONGLIFE_ACCESSTOKEN_AGE = 1000 * 60 * 60 * 24 * 30 // 30 days
+const REGULAR_ACCESSTOKEN_AGE = 1000 * 60 * 60 * 12 // 12 hours
 
 @Resolver()
 export default class UserResolver {
@@ -15,6 +19,7 @@ export default class UserResolver {
     async register(
         @Arg('options', () => RegistrationInput) options: RegistrationInput
     ): Promise<UserCreatedResponse> {
+
         const hashedPassword = await argon2.hash(options.password); 
         let user = await UserModel.create({
             username: options.username,
@@ -36,8 +41,9 @@ export default class UserResolver {
     @Mutation(() => UserTokenResponse)
     async login(
         @Arg('options', () => UsernamePasswordInput) options: UsernamePasswordInput,
-        @Ctx() ctx: AppContext
+        @Ctx() { res }: AppContext
     ): Promise<UserTokenResponse> {
+
         const user = await UserModel.findOne({email: options.email});
         if (!user) {
             return {
@@ -52,47 +58,19 @@ export default class UserResolver {
         }
 
         // creating new tokens
-        const { accessToken, refreshToken } = setTokens(user);
-        
+        const { accessToken } = setAccessToken(user);
+        const { refreshToken } = setRefreshToken(user, options.longlife);
+
         // add refresh-token as cookie to response header
-        ctx.res.cookie("compareo", refreshToken, { httpOnly: true });
+        res.cookie("compareo", refreshToken, {
+            httpOnly: true,
+            path: '/refreshAccess',
+            expires: new Date(Date.now() + (options.longlife ? LONGLIFE_ACCESSTOKEN_AGE : REGULAR_ACCESSTOKEN_AGE)),
+            sameSite: 'strict'
+        });
 
         // returning access-token as string to client
-        return { token: accessToken ? `Bearer ${accessToken}` : null };
-    }
-
-    @Mutation(() => UserTokenResponse)
-    async refreshAccess(
-        @Ctx() ctx: AppContext
-    ): Promise<UserTokenResponse> {
-
-        // reading refresh-token from cookie
-        const token = ctx.req.cookies["compareo"] as string;
-        if (!token){
-            return {
-                errors: [{ message: "Refresh token not found" }]
-            }
-        }
-
-        // validating refresh-token
-        const decodedToken = validateRefreshToken(token);
-        if (!decodedToken){
-            return {
-                errors: [{ message: "Invalid refresh token" }]
-            }
-        }
-
-        // validating user and if access has not been revoked
-        const user = await UserModel.findOne({ userId: decodedToken.userId });
-        if (!user || user.tokenCount !== decodedToken.tokenVersion) {
-            return {
-                errors: [{ message: "Invalid refresh token" }]
-            }
-        }
-            
-        // creating new access-token
-        const { accessToken } = setTokens(user);
-        return { token: accessToken }
+        return { token: accessToken };
     }
 
     @Authorized()
@@ -100,6 +78,7 @@ export default class UserResolver {
     async revokeAccess(
         @Arg('userId', () => String) userId: String
     ): Promise<UserSuccessResponse> {
+
         const user = await UserModel.findOne({ _id: userId });
         if (!user) {
             return {
@@ -108,7 +87,7 @@ export default class UserResolver {
         }
 
         // incrementing tokenVersion to make current refresh-token invalid
-        user.tokenCount += 1;
+        user.tokenCount++;
         await UserModel.findByIdAndUpdate({_id: userId}, user, {new: true});
         return { success: true }
     }
@@ -118,6 +97,14 @@ export default class UserResolver {
     async logout(
         @Ctx() ctx: AppContext
     ): Promise<UserSuccessResponse> {
+
+        let currentUser = await UserModel.findOne({ _id: ctx.user?.userId });
+        if (!currentUser) throw new Error("Internal server error");
+        
+        // incrementing tokenVersion to make current refresh-token invalid
+        currentUser.tokenCount++;
+        await UserModel.findByIdAndUpdate({_id: currentUser._id}, currentUser, {new: true});
+
         ctx.res.clearCookie("compareo");
         return { success: true }
     }
@@ -125,8 +112,9 @@ export default class UserResolver {
     @Authorized()
     @Mutation(() => UserSuccessResponse)
     async deleteUser(
-        @Arg('id', () => String) id: ObjectId,
+        @Arg('id', () => String) id: ObjectId
     ): Promise<UserSuccessResponse> {
+
         const user = await UserModel.findByIdAndDelete({_id: id});
         if (!user) {
             return {
@@ -140,7 +128,8 @@ export default class UserResolver {
     @Authorized()
     @Query(() => [User])
     async users(): Promise<User[]> {
-        return await UserModel.find({})
+
+        return await UserModel.find({});
     }
 
     @Authorized()
@@ -148,6 +137,7 @@ export default class UserResolver {
     async user(
         @Arg("id", () => String) id: ObjectId
     ): Promise<User | null> {
-        return await UserModel.findById({_id: id})
+        
+        return await UserModel.findById({_id: id});
     }
 }

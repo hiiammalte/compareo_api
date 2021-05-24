@@ -1,5 +1,7 @@
+import { Types } from 'mongoose';
+
 export interface IEntity {
-    id: string;
+    id: Types.ObjectId;
     createdAt?: Date;
     updatedAt?: Date;
 }

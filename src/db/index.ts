@@ -12,9 +12,10 @@ const connectToDB = async () => {
         useNewUrlParser: true,
         useUnifiedTopology: true,
         useFindAndModify: false,
-    }, () => {
-        isConnected = true;
-    });
+    }).then(
+        () => { isConnected = true },
+        err => { throw new Error(err) }
+    );
 
     mongoose.connection.on('error', err => {
         throw new Error(err);

@@ -15,8 +15,7 @@ const tokenValidationMiddleware = async function (req: Request, res: Response, n
       if (splitAccessToken && splitAccessToken.length > 1) {
         const decodedAccessTokenPayload = validateAccessToken(splitAccessToken[1]);
         if (decodedAccessTokenPayload) {
-  
-          // adding access-token-payload to context (contains user-id and user-roles)
+          // adding access-token-payload to context (containing user-id and user-roles)
           // will be available to all following operations down the line
           req.user = decodedAccessTokenPayload;
         }

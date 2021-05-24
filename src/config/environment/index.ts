@@ -12,5 +12,6 @@ const env = {
 };
 const accessTokenSecret = process.env.ACCESS_TOKEN_SECRET;
 const resetTokenSecret = process.env.RESET_TOKEN_SECRET;
+const clientUrl = process.env.CLIENT_URL;
 
-export { port, env, mongo, accessTokenSecret, resetTokenSecret };
+export { port, env, mongo, accessTokenSecret, resetTokenSecret, clientUrl };

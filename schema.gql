@@ -3,7 +3,77 @@
 # !!!   DO NOT MODIFY THIS FILE BY YOURSELF   !!!
 # -----------------------------------------------
 
+"""
+The reusable Attribute model - used as base for assigning properties to products
+"""
+type Attribute {
+  """Attribute creation date"""
+  createdAt: DateTime
+
+  """User who created this attribute"""
+  creator: User!
+
+  """Attribute type"""
+  dataType: Float!
+  id: ID!
+
+  """Attribute name"""
+  title: String!
+
+  """Attribute last update date"""
+  updatedAt: DateTime
+}
+
+type AttributeCreatedResponse implements MutationResponse {
+  attribute: Attribute
+  errors: [Error!]
+}
+
+type AttributeSuccessResponse implements MutationResponse {
+  errors: [Error!]
+  success: Boolean
+}
+
+type AttributeUpdatedResponse implements MutationResponse {
+  attribute: Attribute
+  errors: [Error!]
+}
+
+"""The Category model - used for categorizing projects"""
+type Category {
+  """Category creation date"""
+  createdAt: DateTime
+  id: ID!
+
+  """Category name"""
+  title: String!
+
+  """Category last update date"""
+  updatedAt: DateTime
+}
+
+"""
+This is mandatory to tell the app on how to compare properties of two or more products
+"""
+enum ComparisionType {
+  BOOLEAN
+  NUMBER
+  TEXT
+}
+
+input CreateAttributeInput {
+  dataType: ComparisionType!
+  title: String!
+}
+
+input CreateProductInput {
+  manufacturer: String!
+  name: String!
+  url: String!
+}
+
 input CreateProjectInput {
+  categoryId: String!
   description: String!
   title: String!
 }
@@ -18,25 +88,87 @@ type Error {
 }
 
 type Mutation {
+  createAttribute(options: CreateAttributeInput!): AttributeCreatedResponse!
+  createProduct(options: CreateProductInput!, projectId: String!): ProductCreatedResponse!
   createProject(options: CreateProjectInput!): ProjectCreatedResponse!
+  deleteAttribute(id: String!): AttributeSuccessResponse!
+  deleteProject(id: String!, projectId: String!): ProductSuccessResponse!
   deleteUser(id: String!): UserSuccessResponse!
   login(options: UsernamePasswordInput!): UserTokenResponse!
   logout: UserSuccessResponse!
-  refreshAccess: UserTokenResponse!
   register(options: RegistrationInput!): UserCreatedResponse!
   revokeAccess(userId: String!): UserSuccessResponse!
+  updateAttribute(id: String!, options: UpdateAttributeInput!): AttributeUpdatedResponse!
+  updateProduct(id: String!, options: UpdateProductInput!, projectId: String!): ProductUpdatedResponse!
+  updateProject(id: String!, options: UpdateProjectInput!): ProjectUpdatedResponse!
 }
 
 interface MutationResponse {
   errors: [Error!]
 }
 
-"""The Project model"""
-type Project {
-  """Project creation date"""
+"""The Product model - used for comparision within projects"""
+type Product {
+  """Object creation date"""
   createdAt: DateTime
+
+  """User who created this object"""
   creator: User!
   id: ID!
+
+  """Name of person or organization that invented/manufactures the product"""
+  manufacturer: String
+
+  """Name of the product"""
+  name: String!
+
+  """Comparable properties of product"""
+  properties: [Property!]!
+
+  """Object last update date"""
+  updatedAt: DateTime
+
+  """Url of website with information on the product"""
+  url: String
+}
+
+type ProductCreatedResponse implements MutationResponse {
+  errors: [Error!]
+  product: Product
+}
+
+type ProductSuccessResponse implements MutationResponse {
+  errors: [Error!]
+  success: Boolean
+}
+
+type ProductUpdatedResponse implements MutationResponse {
+  errors: [Error!]
+  product: Product
+}
+
+"""The Project model - holds everythings relevant to a comparision"""
+type Project {
+  """Category of the comparable products within this project"""
+  category: Category!
+
+  """Additional users participating in this project"""
+  collaborators: [User!]!
+
+  """Project creation date"""
+  createdAt: DateTime
+
+  """User who created this project"""
+  creator: User!
+
+  """Project description"""
+  description: String!
+  id: ID!
+
+  """Comparable products within this project"""
+  products: [Product!]!
+
+  """Project name"""
   title: String!
 
   """Project last update date"""
@@ -45,10 +177,43 @@ type Project {
 
 type ProjectCreatedResponse implements MutationResponse {
   errors: [Error!]
-  id: String
+  project: Project
+}
+
+type ProjectUpdatedResponse implements MutationResponse {
+  errors: [Error!]
+  project: Project
+}
+
+"""The Property model - used for assigning comparable values to products"""
+type Property {
+  """Property creation date"""
+  createdAt: DateTime
+
+  """User who created this property"""
+  creator: User!
+
+  """Property type"""
+  dataType: Float!
+  id: ID!
+
+  """Property name"""
+  title: String!
+
+  """Property last updated date"""
+  updatedAt: DateTime
+
+  """Property value"""
+  value: String!
 }
 
 type Query {
+  attribute(id: String!): Attribute
+  attributes: [Attribute!]!
+  categories: [Category!]!
+  product(id: String!, projectId: String!): Product
+  products(projectId: String!): [Product!]!
+  project(id: String!): Project
   projects: [Project!]!
   user(id: String!): User
   users: [User!]!
@@ -60,12 +225,29 @@ input RegistrationInput {
   username: String!
 }
 
+input UpdateAttributeInput {
+  dataType: ComparisionType
+  title: String
+}
+
+input UpdateProductInput {
+  manufacturer: String
+  name: String
+  url: String
+}
+
+input UpdateProjectInput {
+  categoryId: String
+  description: String
+  title: String
+}
+
 """The User model"""
 type User {
   """User creation date"""
   createdAt: DateTime
 
-  """User email to be used on login"""
+  """User email - also to be used for login"""
   email: String!
   id: ID!
 
@@ -93,5 +275,6 @@ type UserTokenResponse implements MutationResponse {
 
 input UsernamePasswordInput {
   email: String!
+  longlife: Boolean!
   password: String!
 }

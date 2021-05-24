@@ -1,12 +1,13 @@
 import { sign } from "jsonwebtoken";
-import { IAccessTokenPayload, IRefreshTokenPayload } from "./tokenDefs";
-import { accessTokenSecret, resetTokenSecret } from "../config/environment";
-import { IUser } from "../entities/User";
 
-function setTokens(user : IUser) {
-  
+import { IAccessTokenPayload, IRefreshTokenPayload, IUser } from "./tokenDefs";
+import { accessTokenSecret, resetTokenSecret } from "../config/environment";
+
+
+function setAccessToken(user : IUser) {
+
   const accessTokenPayload: IAccessTokenPayload = {
-    userId: user.id,
+    userId: user._id.toHexString(),
     username: user.username,
     roles: []
   };
@@ -17,18 +18,23 @@ function setTokens(user : IUser) {
     { expiresIn: '15m' }
   );
 
+  return { accessToken };
+}
+
+function setRefreshToken(user : IUser, longlife: boolean) {
+
   const refreshTokenPayload : IRefreshTokenPayload = {
-    userId: user.id,
+    userId: user?._id?.toHexString(),
     tokenVersion: user.tokenCount
   };
 
   const refreshToken : string = sign(
     { payload: refreshTokenPayload },
     resetTokenSecret!,
-    { expiresIn: '7d' }
+    { expiresIn: longlife ? '30d' : '12h' }
   );
 
-  return { accessToken, refreshToken };
+  return { refreshToken };
 }
 
-export { setTokens };
+export { setAccessToken, setRefreshToken };
