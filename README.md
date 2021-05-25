@@ -2,7 +2,7 @@
 
 This is the backend part of the compare[] app. This app lets you compare all kind of products against each other. You may also collaborate in teams.
 
-It supplies a GraphQL API endpoint and uses MongoDB for persistance. The app is build upon Node.js, Express and is written in TypeScript. There is heavy usage of TypeScript decorators within the code, which - in my opinion - make it both easier to code and easier to read. 
+This project supplies a GraphQL API endpoint and uses MongoDB for persistance. The app is build upon Node.js, Express and is written in TypeScript. There is heavy usage of TypeScript decorators within the code, which - in my opinion - make it both easier to code and easier to read. 
 
 Basic authentication is configured and uses Access and Refresh Tokens. Before being able to run certain queries/mutation, a user is required to register, login and then provide a Bearer Token (JWT) for authorization.
 
