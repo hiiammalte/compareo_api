@@ -1,6 +1,6 @@
 # compareo API - Node.js, Express and GraphQL-based
 
-This is the backend part of the compare[] app. This app lets you compare all kind of products against each other. You may also collaborate in teams.
+This is the backend part of the compare[] app. The app lets you compare all kind of products against each other. You may also collaborate in teams.
 
 This project supplies a GraphQL API endpoint and uses MongoDB for persistance. The app is build upon Node.js, Express and is written in TypeScript. There is heavy usage of TypeScript decorators within the code, which - in my opinion - make it both easier to code and easier to read. 
 
