@@ -30,16 +30,15 @@ export default class ProductResolver {
             }
         }
 
-        const product = await ProductModel.create({
+        const product = new ProductModel({
             name: options.name,
             url: options.url,
             manufacturer: options.manufacturer,
-            creator: currentUser._id
+            creator: currentUser
         });
 
-        if (!product) throw new Error("Internal server error");
-
         parentProject.products?.push(product);
+        await parentProject.save();
         return { product };
     }
 
@@ -84,11 +83,18 @@ export default class ProductResolver {
         const currentUser = await UserModel.findOne({ _id: ctx.user?.userId });
         if (!currentUser) throw new Error("Internal server error");
 
-        const parentProject = await ProjectModel.findById({ _id: projectId });
-        const product = parentProject && parentProject?.products?.find(x => x.id === id && (x.creator === currentUser.id || parentProject.creator == currentUser.id || parentProject!.collaborators?.indexOf(currentUser.id) !== -1 ));
-        if (!product) {
+        const parentProject = await ProjectModel.find({}).findByIdAndMemberId(projectId, currentUser.id);
+        if (!parentProject) {
             return {
                 errors: [{ message: "Project not found" }]
+            }
+        }
+        console.log("PARENT PROJECT", parentProject);
+        const product = parentProject && parentProject?.products?.find(x => x.id === id);
+        console.log("PRODUCT", product);
+        if (!product) {
+            return {
+                errors: [{ message: "Product not found" }]
             }
         }
 
@@ -109,17 +115,22 @@ export default class ProductResolver {
         const currentUser = await UserModel.findOne({ _id: ctx.user?.userId });
         if (!currentUser) throw new Error("Internal server error");
 
-        let parentProject = await ProjectModel.findById({ _id: projectId });
-        const product = parentProject && parentProject.products?.find(x => x.id === id && (x.creator == currentUser.id || parentProject!.creator == currentUser.id || parentProject!.collaborators?.indexOf(currentUser.id) !== -1));
-        if (!product) {
+        let parentProject = await ProjectModel.find({}).findByIdAndMemberId(projectId, currentUser.id);
+        if (!parentProject) {
             return {
                 success: false,
                 errors: [{ message: "Project not found" }]
             }
         }
+        const product = parentProject && parentProject.products?.find(x => x.id === id);
+        if (!product) {
+            return {
+                success: false,
+                errors: [{ message: "Product not found" }]
+            }
+        }
 
-        const filteredList = parentProject?.products?.filter(c => c.id !== product.id);
-        parentProject!.products = filteredList;
+        parentProject!.products = parentProject?.products?.filter(c => c.id !== product.id);
         await parentProject!.save();
         
         return {

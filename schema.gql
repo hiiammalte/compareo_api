@@ -3,6 +3,10 @@
 # !!!   DO NOT MODIFY THIS FILE BY YOURSELF   !!!
 # -----------------------------------------------
 
+input AddCollaboratorInput {
+  email: String!
+}
+
 """
 The reusable Attribute model - used as base for assigning properties to products
 """
@@ -52,6 +56,11 @@ type Category {
   updatedAt: DateTime
 }
 
+type CollaborationSuccessResponse implements MutationResponse {
+  errors: [Error!]
+  success: Boolean
+}
+
 """
 This is mandatory to tell the app on how to compare properties of two or more products
 """
@@ -67,9 +76,9 @@ input CreateAttributeInput {
 }
 
 input CreateProductInput {
-  manufacturer: String!
+  manufacturer: String
   name: String!
-  url: String!
+  url: String
 }
 
 input CreateProjectInput {
@@ -88,7 +97,8 @@ type Error {
 }
 
 type Mutation {
-  createAttribute(options: CreateAttributeInput!): AttributeCreatedResponse!
+  addCollaborators(options: AddCollaboratorInput!, projectId: String!): CollaborationSuccessResponse!
+  createAttribute(options: CreateAttributeInput!, projectId: String!): AttributeCreatedResponse!
   createProduct(options: CreateProductInput!, projectId: String!): ProductCreatedResponse!
   createProject(options: CreateProjectInput!): ProjectCreatedResponse!
   deleteAttribute(id: String!): AttributeSuccessResponse!
@@ -96,7 +106,9 @@ type Mutation {
   deleteUser(id: String!): UserSuccessResponse!
   login(options: UsernamePasswordInput!): UserTokenResponse!
   logout: UserSuccessResponse!
-  register(options: RegistrationInput!): UserCreatedResponse!
+  register(options: RegistrationInput!): UserTokenResponse!
+  registerByInvitation(options: RegistrationByInvitationInput!): UserTokenResponse!
+  removeCollaborator(options: RemoveCollaboratorInput!, projectId: String!): CollaborationSuccessResponse!
   revokeAccess(userId: String!): UserSuccessResponse!
   updateAttribute(id: String!, options: UpdateAttributeInput!): AttributeUpdatedResponse!
   updateProduct(id: String!, options: UpdateProductInput!, projectId: String!): ProductUpdatedResponse!
@@ -149,6 +161,9 @@ type ProductUpdatedResponse implements MutationResponse {
 
 """The Project model - holds everythings relevant to a comparision"""
 type Project {
+  """Attributes for comparison within this project"""
+  attributes: [Attribute!]!
+
   """Category of the comparable products within this project"""
   category: Category!
 
@@ -219,10 +234,21 @@ type Query {
   users: [User!]!
 }
 
+input RegistrationByInvitationInput {
+  email: String!
+  invitationCode: String!
+  password: String!
+  username: String!
+}
+
 input RegistrationInput {
   email: String!
   password: String!
   username: String!
+}
+
+input RemoveCollaboratorInput {
+  id: String!
 }
 
 input UpdateAttributeInput {
@@ -256,11 +282,6 @@ type User {
 
   """User name"""
   username: String!
-}
-
-type UserCreatedResponse implements MutationResponse {
-  errors: [Error!]
-  id: String
 }
 
 type UserSuccessResponse implements MutationResponse {

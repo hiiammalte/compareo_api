@@ -6,6 +6,7 @@ import { Attribute, AttributeModel } from "../../../entities/Attribute";
 import { UserModel } from "../../../entities/User";
 import { AttributeCreatedResponse, AttributeSuccessResponse, AttributeUpdatedResponse } from "./responses";
 import { CreateAttributeInput, UpdateAttributeInput } from "./inputs";
+import { ProjectModel } from "../../../entities/Project";
 
 @Resolver()
 export default class AttributeResolver {
@@ -14,6 +15,7 @@ export default class AttributeResolver {
     @Mutation(() => AttributeCreatedResponse)
     async createAttribute(
         @Ctx() ctx: AppContext,
+        @Arg('projectId', () => String) projectId: Types.ObjectId,
         @Arg('options', () => CreateAttributeInput) options: CreateAttributeInput
     ): Promise<AttributeCreatedResponse> {
 
@@ -23,9 +25,20 @@ export default class AttributeResolver {
         let attribute = await AttributeModel.create({
             title: options.title,
             dataType: options.dataType,
-            creator: currentUser._id
+            creator: currentUser
         });
         if (!attribute) throw new Error("Internal server error");
+
+        if (projectId) {
+            let parentProject = await ProjectModel.find({}).findByIdAndMemberId(projectId, currentUser.id);
+            if (!parentProject) {
+                return {
+                    errors: [{ message: "Project not found" }]
+                }
+            }
+            parentProject.attributes?.push(attribute);
+            parentProject.save();
+        }
 
         return { attribute };
     }
@@ -38,7 +51,6 @@ export default class AttributeResolver {
 
         const currentUser = await UserModel.findOne({ _id: ctx.user?.userId });
         if (!currentUser) throw new Error("Internal server error");
-        
 
         return await AttributeModel.find({});
     }
@@ -70,10 +82,9 @@ export default class AttributeResolver {
 
         let attribute = await AttributeModel.findOne({ _id: id });
         if (attribute &&  attribute.creator === currentUser.id) {
-
             Object.assign(attribute, options);
             await attribute.save();
-
+            
             return { attribute };
         }
 

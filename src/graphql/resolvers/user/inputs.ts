@@ -18,6 +18,24 @@ class RegistrationInput implements Partial<User> {
 }
 
 @InputType()
+class RegistrationByInvitationInput implements Partial<User> {
+
+    @Field()
+    @Length(1, 255)
+    public username!: string;
+
+    @Field()
+    public password!: string;
+    
+    @Field()
+    @IsEmail()
+    public email!: string;
+
+    @Field()
+    public invitationCode!: string;
+}
+
+@InputType()
 class UsernamePasswordInput implements Partial<User> {
 
     @Field()
@@ -32,4 +50,4 @@ class UsernamePasswordInput implements Partial<User> {
     public longlife!: boolean;
 }
 
-export { RegistrationInput, UsernamePasswordInput }
+export { RegistrationInput, RegistrationByInvitationInput, UsernamePasswordInput }

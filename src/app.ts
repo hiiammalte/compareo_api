@@ -77,6 +77,6 @@ const start = async () => {
 }
 
 start().catch((error) => {
-  console.log('Not able to run Apollo server');
+  console.log('Unable to run Apollo server');
   console.log(error);
 });

@@ -10,10 +10,10 @@ class CreateProductInput implements Partial<Product> {
     @Length(1, 255)
     public name!: string;
 
-    @Field()
+    @Field({ nullable: true })
     public url?: string;
 
-    @Field()
+    @Field({ nullable: true })
     @Length(1, 255)
     public manufacturer?: string;
 }

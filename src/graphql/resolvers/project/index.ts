@@ -21,7 +21,7 @@ export default class ProjectResolver {
     ): Promise<ProjectCreatedResponse> {
         const currentUser = await UserModel.findOne({ _id: ctx.user?.userId });
         if (!currentUser) throw new Error("Internal server error");
-
+        
         const category = await CategoryModel.findById({_id: options?.categoryId});
         if (!category) {
             return {

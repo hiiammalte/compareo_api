@@ -28,6 +28,9 @@ class User implements IEntity {
     @prop({ required: true, type: String })
     public password!: string;
 
+    //for registration via invite
+    @prop({ type: String })
+    public invitationCode?: string
 
     //for authentication via refreshToken
     @prop({ type: Number})

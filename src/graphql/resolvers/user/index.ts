@@ -3,8 +3,8 @@ import { ObjectId } from "mongodb";
 import argon2 from "argon2";
 
 import { UserModel, User } from "../../../entities/User";
-import { UserCreatedResponse, UserSuccessResponse, UserTokenResponse } from "./responses";
-import { RegistrationInput, UsernamePasswordInput } from "./inputs";
+import { UserSuccessResponse, UserTokenResponse } from "./responses";
+import { RegistrationInput, RegistrationByInvitationInput, UsernamePasswordInput } from "./inputs";
 
 import AppContext from "../../authorization/appContext";
 import { setAccessToken, setRefreshToken } from "../../../authentication/setTokens";
@@ -15,18 +15,17 @@ const REGULAR_ACCESSTOKEN_AGE = 1000 * 60 * 60 * 12 // 12 hours
 @Resolver()
 export default class UserResolver {
 
-    @Mutation(() => UserCreatedResponse)
+    @Mutation(() => UserTokenResponse)
     async register(
-        @Arg('options', () => RegistrationInput) options: RegistrationInput
-    ): Promise<UserCreatedResponse> {
+        @Arg('options', () => RegistrationInput) options: RegistrationInput,
+        @Ctx() { res }: AppContext
+    ): Promise<UserTokenResponse> {
 
         const hashedPassword = await argon2.hash(options.password); 
-        let user = await UserModel.create({
+        const user = await UserModel.create({
             username: options.username,
             password: hashedPassword,
             email: options.email,
-            createdAt: new Date(),
-            updatedAt: new Date(),
             tokenCount: 0
         });
         if (!user) {
@@ -34,8 +33,55 @@ export default class UserResolver {
                 errors: [{ message: "Internal server error" }]
             };
         }
+        
+        // creating new tokens
+        const { accessToken } = setAccessToken(user);
+        const { refreshToken } = setRefreshToken(user, false);
 
-        return { id: user._id };
+        // add refresh-token as cookie to response header
+        res.cookie("compareo", refreshToken, {
+            httpOnly: true,
+            path: '/refreshAccess',
+            expires: new Date(Date.now() + REGULAR_ACCESSTOKEN_AGE),
+            sameSite: 'strict'
+        });
+
+        // returning access-token as string to client
+        return { token: accessToken };
+    }
+
+    @Mutation(() => UserTokenResponse)
+    async registerByInvitation(
+        @Arg('options', () => RegistrationByInvitationInput) options: RegistrationByInvitationInput,
+        @Ctx() { res }: AppContext
+    ): Promise<UserTokenResponse> {
+
+        let user = await UserModel.findOne({ $and: [{ email: options.email }, { invitationCode: options.invitationCode }] });
+        if (!user) {
+            return {
+                errors: [{ message: "Invalid email or invitation code" }]
+            }
+        }
+        
+        const hashedPassword = await argon2.hash(options.password); 
+        user.password = hashedPassword;
+        user.username = options.username;
+        user.save();
+
+        // creating new tokens
+        const { accessToken } = setAccessToken(user);
+        const { refreshToken } = setRefreshToken(user, false);
+
+        // add refresh-token as cookie to response header
+        res.cookie("compareo", refreshToken, {
+            httpOnly: true,
+            path: '/refreshAccess',
+            expires: new Date(Date.now() + REGULAR_ACCESSTOKEN_AGE),
+            sameSite: 'strict'
+        });
+
+        // returning access-token as string to client
+        return { token: accessToken };
     }
 
     @Mutation(() => UserTokenResponse)

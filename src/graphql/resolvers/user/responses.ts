@@ -3,13 +3,6 @@ import { Field, ObjectType } from "type-graphql";
 import MutationResponse from "../../common/MutationResponse"
 
 @ObjectType({ implements: MutationResponse })
-class UserCreatedResponse extends MutationResponse {
-    
-    @Field(() => String, {nullable: true})
-    id?: String
-}
-
-@ObjectType({ implements: MutationResponse })
 class UserUpdatedResponse extends MutationResponse {
     
     @Field(() => User, {nullable: true})
@@ -31,4 +24,4 @@ class UserTokenResponse extends MutationResponse {
 }
 
 
-export { UserCreatedResponse, UserUpdatedResponse, UserSuccessResponse, UserTokenResponse };
+export { UserUpdatedResponse, UserSuccessResponse, UserTokenResponse };

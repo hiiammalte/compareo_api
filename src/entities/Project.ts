@@ -8,11 +8,13 @@ import { IEntity } from './IEntity';
 import { Category } from './Category';
 import { User } from './User';
 import { Product } from './Product';
+import { Attribute } from './Attribute';
 
 
 interface QueryHelpers {
     findByCreatorId: AsQueryMethod<typeof findByCreatorId>;
     findByIdAndCreatorId: AsQueryMethod<typeof findByIdAndCreatorId>;
+    findByIdAndMemberId: AsQueryMethod<typeof findByIdAndMemberId>;
 }
 
 export function findByCreatorId(this: ReturnModelType<typeof Project, QueryHelpers>, creatorId: Types.ObjectId) {
@@ -21,15 +23,22 @@ export function findByCreatorId(this: ReturnModelType<typeof Project, QueryHelpe
         match: { _id: new Types.ObjectId(creatorId) }
     });
 }
-export function findByIdAndCreatorId(this: ReturnModelType<typeof Project, QueryHelpers>, creatorId: Types.ObjectId, id: Types.ObjectId) {
-    return this.find({ _id: id }).populate({
+export function findByIdAndCreatorId(this: ReturnModelType<typeof Project, QueryHelpers>, id: Types.ObjectId, creatorId: Types.ObjectId) {
+    return this.findOne({ _id: id }).populate({
         path: 'creator',
         match: { _id: new Types.ObjectId(creatorId) }
+    });
+}
+export function findByIdAndMemberId(this: ReturnModelType<typeof Project, QueryHelpers>, id: Types.ObjectId, userId: Types.ObjectId) {
+    return this.findOne({ _id: id }).populate({
+        path: 'creator collaborators',
+        match: { $and: [{_id: new Types.ObjectId(userId)}, { $or: [{"creator": new Types.ObjectId(userId)}, {"collaborators.id": new Types.ObjectId(userId)}]}]  }
     });
 }
 
 @queryMethod(findByIdAndCreatorId)
 @queryMethod(findByCreatorId)
+@queryMethod(findByIdAndMemberId)
 @plugin(autopopulate as any)
 @ObjectType({ description: "The Project model - holds everythings relevant to a comparision" })
 class Project implements IEntity {
@@ -50,11 +59,15 @@ class Project implements IEntity {
     public category!: Ref<Category>;
     
     @Field(_type => [Product], { description: 'Comparable products within this project' })
-    @prop({ required: false, autopopulate: true, ref: () => Product })
+    @prop({ required: false, autopopulate: true, type: () => Product })
     public products?: Product[];
 
+    @Field(_type => [Attribute], { description: 'Attributes for comparison within this project'})
+    @prop({ required: false, autopopulate: true, type: () => Attribute })
+    public attributes?: Attribute[];
+
     @Field(_type => [User], { description: 'Additional users participating in this project' })
-    @prop({ required: false, autopopulate: true, ref: () => User })
+    @prop({ required: false, autopopulate: true, type: () => User })
     public collaborators?: Ref<User>[];
 
 
@@ -79,4 +92,3 @@ const ProjectModel = getModelForClass<typeof Project, QueryHelpers>(Project, {
 });
 
 export { Project, ProjectModel }
-
