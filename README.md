@@ -4,7 +4,7 @@ This is the backend part of the compare[] app. The app lets you compare all kind
 
 This project supplies a GraphQL API endpoint and uses MongoDB for persistance. The app is build upon Node.js, Express and is written in TypeScript. There is heavy usage of TypeScript decorators within the code, which - in my opinion - make it both easier to code and easier to read. 
 
-Basic authentication is configured and uses Access and Refresh Tokens. Before being able to run certain queries/mutation, a user is required to register, login and then provide a Bearer Token (JWT) for authorization.
+Basic authentication is configured using Access and Refresh Tokens. Before being able to run certain queries/mutation, a user is required to register, login and then provide the obtained Bearer Token (JWT) for authentication and authorization.
 
 ## Features
 
@@ -15,6 +15,33 @@ Basic authentication is configured and uses Access and Refresh Tokens. Before be
 - Access-logging and Error-intercepting Apollo-Middleware
 - TypeGraphQL implementation
 - TypeScript decorators
+
+## What's included?
+Overview of files and folders within the "src" folder of this project. Each subfolder holds additional files. The "app.ts" file is the executable entry point of this application.
+
+
+    .src
+    ├── authentication          # JWT definition, functions & middleware
+    ├── config
+    │   └── environment         # TypeScript configuration for environment variables
+    ├── db                      # database communication configuration via mongoose
+    │   └── seeding             # mongo-seeding configuration & demo data setup
+    │       └── 1-categories
+    ├── entities                # entities with TypeScript decorators for mongoose and GraphQL
+    ├── enums                   # enums with GraphQL configuration for usage within entities
+    ├── graphql
+    │   ├── authorization       # interface for Apollo GraphQL context with current user object
+    │   ├── common              # shared interface for GraphQL mutation response objects
+    │   ├── middleware          # TypeGrapQL middleware functions
+    │   └── resolvers           # GraphQL resolvers for entities
+    │       ├── attribute
+    │       ├── category
+    │       ├── collaborators
+    │       ├── product
+    │       ├── project
+    │       └── user
+    ├── app.ts                  # app file including Apollo Server setup & Refresh Token endpoint
+    └── env.d.ts                # TypeScript configuration file for gen-env script 
 
 ## Getting started
 
