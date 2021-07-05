@@ -151,7 +151,7 @@ export default class UserResolver {
         currentUser.tokenCount++;
         await UserModel.findByIdAndUpdate({_id: currentUser._id}, currentUser, {new: true});
 
-        ctx.res.clearCookie("compareo");
+        ctx.res.clearCookie("compareo", { path: '/refreshAccess' });
         return { success: true }
     }
     
